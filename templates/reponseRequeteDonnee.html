@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{nomBD}} : {{ typeRequete }}</title>
+  </head>
+  <body>
+    <h1>Résultats de la requête:</h1>
+    <div>
+      <h3>La requête sous forme SQL:</h3>
+      <p>{{ laRequete }}</p>
+    </div>
+    <div>
+      <h3>Explications:</h3>
+      <textarea disabled> {{ raisonnementDerriere }}</textarea>
+    </div>
+    <div>
+      <h3>La BD une fois la requête remplie</h3>
+      <textarea disabled>{{ BDResultante}}</textarea>
+    </div>
+  </body>
+</html>

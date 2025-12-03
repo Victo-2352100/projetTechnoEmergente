@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Accueil</title>
+  </head>
+  <body>
+    <h1>Bienvenue! Vous pouvez créer votre base de donnée selon son nom</h1>
+    <form method="post" , action="/">
+      <label for="nomBD">Le nom de votre base de données: </label>
+      <input
+        type="text"
+        id="nomBD"
+        name="nomBD"
+        value="{{ request.form['nomBD'] }}"
+      />
+      <input type="submit" />
+    </form>
+  </body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Gérer la base de données!</title>
+  </head>
+  <body>
+    <h1>Voici votre base de données basée sur {{ nomBD }}</h1>
+    <h2>Vos tables:</h2>
+    <div style="display: flex; flex-direction: row">
+      <div style="display: flex; flex-direction: column; padding-right: 30px">
+        <h3>Affichage textuel de la BD</h3>
+        <textarea rows="75" cols="75" disabled>
+          {{ tablesDeBD }}
+        </textarea>
+      </div>
+      <div style="display: flex; flex-direction: column">
+        <h3>Version copiable en SQL de la BD</h3>
+        <textarea rows="75" cols="75" id="copiable" disabled>
+          {{ tablesSQL }}
+        </textarea>
+      </div>
+      <button style="width: 50px; height: 50px" onclick="CopierSQL()">
+        Copier SQL
+      </button>
+      <script>
+        //Script inspiré de: https://www.w3schools.com/howto/howto_js_copy_clipboard.asp
+        function CopierSQL() {
+          var leSQL = document.getElementById('copiable');
+
+          leSQL.select();
+          leSQL.setSelectionRange(0, 9999);
+
+          navigator.clipboard.writeText(leSQL.value);
+        }
+      </script>
+    </div>
+    <br />
+    <h3>Cette option n'est qu'en démonstration et n'est pas fonctionnelle</h3>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        border: 3px solid black;
+        background-color: grey;
+        padding: 20px;
+      "
+    >
+      <!--Source pour faire un flex: https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Flexible_box_layout/Basic_concepts-->
+      <h4 style="padding-right: 5px">Je veux faire un/une...</h4>
+      <select id="controles" onchange="AfficherSelonChoisi()">
+        <option disabled selected value="defaut" style="text-align: center">
+          Manipulation
+        </option>
+        <optgroup label="Contrôles des données">
+          <!--Pour optgroup: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/optgroup-->
+          <option value="ajoutDonnees">Ajout de données</option>
+          <option value="modifDonnees">Modification de données</option>
+          <option value="suppDonnees">Suppression de données</option>
+        </optgroup>
+        <optgroup label="Contrôles des tables">
+          <option value="ajoutTables">
+            Ajout d'une table (veuillez ignorer le choix de tables qui suit)
+          </option>
+          <option value="modifTables">Modification d'une table</option>
+          <option value="suppTables">Suppression d'une table</option>
+        </optgroup>
+      </select>
+      <h4 style="padding-left: 5px; padding-right: 5px">sur...</h4>
+      <select id="choixTables" onchange="AfficherSelonChoisi()">
+        <option disabled selected value="defaut">Table choisie</option>
+        <optgroup>Tables</optgroup>
+        {% for nomTable in nomsTables %}
+        <option>{{ nomTable }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div id="adapterDemande" style="visibility: hidden">
+      <!--Ne s'affichera que lorsque les options correspondantes sont sélectionnées-->
+      <div id="ajoutDonnee">
+        <h2>Ajout de données</h2>
+        <form
+          id="formulaireAjoutDonnee"
+          method="post"
+          action="{{ url_for('requeteDonneesBD', nomBD=nomBD, tablesBD=TablesDeBD, typeRequete='ajout de données')}}"
+        >
+          <!--Cachées pour ne pas que ça prenne trop de place.-->
+          <!--Pour mettre plusieurs paramètres dans Flask sans que l'url soit dégueulasse-->
+          <input type="hidden" name="tablesBD" value="{{ TablesDeBD }}" />
+          <input type="hidden" name="typeRequete" value="ajout de données" />
+          <input type="hidden" class="nomTableRequete" name="tableChoisie" />
+          <div id="conteneurVariablesAjoutDonnee">
+            <div class="paireDonnee">
+              <label for="variable">Variable:</label>
+              <input type="text" id="variable" name="variable[]" required />
+              <label for="variable">Valeur de la variable:</label>
+              <input type="text" id="valeur" name="valeur[]" required />
+            </div>
+          </div>
+          <p style="color: red; font-weight: bold; font-size: small">
+            Cliquez sur ce bouton seulement si vous êtes sûr d'ajouter une
+            variable à votre requête.
+          </p>
+          <button type="button" onclick="ajouterVariable('AjoutDonnee')">
+            Ajouter une variable qui sera OBLIGATOIRE
+          </button>
+          <input style="padding-top: 10px" type="submit" />
+        </form>
+      </div>
+      <div id="modificationDonnee">
+        <h2>Modification de données</h2>
+        <form
+          id="formulaireModificationDonnee"
+          method="post"
+          action="{{ url_for('requeteDonneesBD', nomBD=nomBD)}}"
+        >
+          <input type="hidden" name="tablesBD" value="{{ TablesDeBD }}" />
+          <input
+            type="hidden"
+            name="typeRequete"
+            value="modification de données"
+          />
+          <input type="hidden" class="nomTableRequete" name="tableChoisie" />
+          <div id="conteneurVariablesModificationDonnee">
+            <div class="paireDonnee">
+              <label for="variable"
+                >Identifiant de l'enregistrement (OBLIGATOIRE):</label
+              >
+              <input
+                type="number"
+                id="variable"
+                name="variable[]"
+                value="id"
+                readonly
+              />
+              <label for="variable">Numéro d'identifiant:</label>
+              <input type="text" id="valeur" name="valeur[]" required />
+            </div>
+          </div>
+          <p style="color: red; font-weight: bold; font-size: small">
+            Cliquez sur ce bouton seulement si vous êtes sûr d'ajouter une
+            variable à votre requête.s
+          </p>
+          <button type="button" onclick="ajouterVariable('ModificationDonnee')">
+            Ajouter une variable qui sera OBLIGATOIRE
+          </button>
+          <input style="padding-top: 10px" type="submit" />
+        </form>
+      </div>
+      <div id="suppressionDonnee">
+        <h2>Suppression de données</h2>
+        <form
+          id="formulaireSuppressionDonnee"
+          method="post"
+          action="{{ url_for('requeteDonneesBD', nomBD=nomBD )}}"
+        >
+          <input type="hidden" name="tablesBD" value="{{ TablesDeBD }}" />
+          <input
+            type="hidden"
+            name="typeRequete"
+            value="suppression de données"
+          />
+          <input type="hidden" class="nomTableRequete" name="tableChoisie" />
+          <label for="variable"
+            >Identifiant de l'enregistrement (OBLIGATOIRE):</label
+          >
+          <input
+            type="text"
+            id="variable"
+            name="variable[]"
+            value="id"
+            readonly
+          />
+          <label for="variable">Numéro d'identifiant:</label>
+          <input type="text" id="valeur" name="valeur[]" required />
+          <input style="padding-top: 10px" type="submit" />
+        </form>
+      </div>
+      <div id="ajoutTable">
+        <h2>Ajout d'une table</h2>
+        <p style="color: red; font-weight: bold; font-size: small">
+          La table choisie dans l'autre option ne sera pas prise en compte
+        </p>
+        <form
+          id="formulaireAjoutTable"
+          method="post"
+          action="{{url_for('requeteTablesBD', nomTable=nomBD)}}"
+        >
+          <input type="hidden" name="tablesBD" value="{{ TablesDeBD }}" />
+          <input type="hidden" name="typeRequete" value="ajout d'une table" />
+        </form>
+      </div>
+      <div id="modificationTable">
+        <h2>Modification d'une table</h2>
+        <form
+          id="formulaireModificationTable"
+          method="post"
+          action="{{ url_for('requeteTablesBD', nomTable=nomBD)}}"
+        >
+          <input type="hidden" name="tablesBD" value="{{ TablesDeBD }}" />
+          <input
+            type="hidden"
+            name="typeRequete"
+            value="modification d'une table"
+          />
+          <input type="hidden" class="nomTableRequete" name="tableChoisie" />
+        </form>
+      </div>
+      <div id="suppressionTable">
+        <h2>Suppression d'une table</h2>
+        <form
+          id="formulaireSuppressionTable"
+          method="post"
+          action="{{ url_for('requeteTablesBD', nomBD=nomBD)}}"
+        >
+          <input type="hidden" name="tablesBD" value="{{ TablesDeBD }}" />
+          <input
+            type="hidden"
+            name="typeRequete"
+            value="suppression d'une table"
+          />
+          <input type="hidden" class="nomTableRequete" name="tableChoisie" />
+          <input
+            id="confirmerSuppression"
+            type="submit"
+            value="Confirmer la suppression"
+          />
+        </form>
+      </div>
+    </div>
+    <script>
+      //Inspiration: https://www.geeksforgeeks.org/javascript/how-to-show-hide-a-div-based-on-selected-option-value-of-a-select-using-javascript
+      //Le script permettant d'afficher ou non certaines parties de l'interface selon ce qui est sélectionné
+      function AfficherSelonChoisi() {
+        //Variables pour la valeur choisie
+        var controleChoisi = document.getElementById('controles').value;
+        var tableChoisie = document.getElementById('choixTables').value;
+        //Variables pour les divisions
+        var divBase = document.getElementById('adapterDemande');
+        //Sous divisions
+        var divAjoutDonnees = document.getElementById('ajoutDonnee');
+        var divModifDonnees = document.getElementById('modificationDonnee');
+        var divSuppressionDonnees =
+          document.getElementById('suppressionDonnee');
+        var divAjoutTable = document.getElementById('ajoutTable');
+        var divModifTable = document.getElementById('modificationTable');
+        var divSuppressionTable = document.getElementById('suppressionTable');
+        //Si les options par défaut sont encore sur un ou l'autre, on affiche rien
+        if (controleChoisi === 'defaut' || tableChoisie === 'defaut') {
+          divBase.style.visibility = 'hidden';
+        } else {
+          //Ça se lance à chaque changement, donc on cache tout d'abord et on montre ce qu'on a besoin dès qu'un changement
+          divAjoutDonnees.style.visibility = 'hidden';
+          divModifDonnees.style.visibility = 'hidden';
+          divSuppressionDonnees.style.visibility = 'hidden';
+          divModifTable.style.visibility = 'hidden';
+          divAjoutTable.style.visibility = 'hidden';
+          divSuppressionTable.style.visibility = 'hidden';
+          if (controleChoisi === 'ajoutDonnees') {
+            divBase.style.visibility = 'visible';
+            divAjoutDonnees.style.visibility = 'visible';
+          } else if (controleChoisi === 'modifDonnees') {
+            divBase.style.visibility = 'visible';
+            divModifDonnees.style.visibility = 'visible';
+          } else if (controleChoisi === 'suppDonnees') {
+            divBase.style.visibility = 'visible';
+            divSuppressionDonnees.style.visibility = 'visible';
+          } else if (controleChoisi === 'ajoutTables') {
+            divBase.style.visibility = 'visible';
+            divAjoutTable.style.visibility = 'visible';
+          } else if (controleChoisi === 'modifTables') {
+            divBase.style.visibility = 'visible';
+            divModifTable.style.visibility = 'visible';
+          } else if (controleChoisi === 'suppTables') {
+            divBase.style.visibility = 'visible';
+            divSuppressionTable.style.visibility = 'visible';
+          }
+        }
+        var champsARemplirTableChoisie =
+          document.getElementsByClassName('nomTableRequete');
+        //Puisque je change la valeur de classeS, je dois faire une boucle
+
+        for (let champTable of champsARemplirTableChoisie) {
+          champTable = tableChoisie;
+        }
+      }
+
+      function ajouterVariable(typeRequete) {
+        //Comme j'ai plusieurs conteneur de variables, je vais ajouter leur type précis à la fin de leur ID
+        var conteneurDeVariables = document.getElementById(
+          'conteneurVariables' + typeRequete,
+        );
+        const paireAjoutee = document.createElement('div');
+        paireAjoutee.classList.add('paireDonnee');
+        //On mets litérallement l'HTML qu'on veut ajouter.
+        //Required parce qu'on veut pas que l'utilisateur clique partout pour rien.
+        paireAjoutee.innerHTML = `
+          <label for="variable">Variable 1:</label>
+          <input type="text" id="variable" name="variable[]" required/>
+          <label for="variable">Valeur de la variable:</label>
+          <input type="text" id="valeur" name="valeur[]" required/>
+        `; //Puis on s'assure qu'il apparaîsse dans la fin du conteneur
+        conteneurDeVariables.appendChild(paireAjoutee);
+      }
+    </script>
+  </body>
+</html>
